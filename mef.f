@@ -133,8 +133,7 @@ c                       matriz de rigidez no format skyline
         call mem(i8)
 
 c     Gerar perfil skyline da matriz de rigidez:
-c       profil(m: ponteiro de inteiros para a memoria,
-c              ix: m(i2) -> conectividade + material do elemento,
+c       profil(ix: m(i2) -> conectividade + material do elemento,
 c              id: m(i3) -> restricoes nodais,
 c              jdiag: m(i7) -> vetor de posicoes dos elementos diagonais da
 c                              matriz de rigidez no format skyline
@@ -188,7 +187,7 @@ c
       end
 
 c     *****************************************************************
-c		rdata -> subrotina para leitura de dados
+c     Subrotina para leitura de dados do arquivo .dat
 c     *****************************************************************
       subroutine rdata(e,ie,ix,id,x,f,nnode,numel,numat,nen,ndm,ndf,nin)
         integer nnode, numel, numat, ndm, nen, ndf, ie(*)
@@ -197,7 +196,20 @@ c     *****************************************************************
 
 c       Loop de 1 a numat (numero de materiais, 1 linha do .dat)
         do 100 i = 1, numat
+c           Segunda linha .dat: ma -> material, iel -> tipo de elemento
             read(nin,*) ma,iel
+c           Biblioteca de elem. para ler propriedades materiais:
+c              elmlib(e: constantes fisicas,
+c                     xl:
+c                     ul:,
+c                     fl:,
+c                     sl:,
+c                     nel:,
+c                     iel:,
+c                     ndm:,
+c                     nst:,
+c                     isw:,
+c                     nin:)
             call elmlib(e(1,ma),dum,dum,dum,dum,1,iel,1,1,1,nin)
             ie(ma) = iel
  100    continue
@@ -586,7 +598,7 @@ c     ****************************************************************
         dimension a(*), b(*), jdiag(*)
         logical afac, back
 
-c.... Fatorizatpo da matriz e redutpo do vetor independente:
+c.... Fatorizacao da matriz e reducao do vetor independente:
         aengy = 0.0d0
         jr = 0
         do 600 j = 1,neq
@@ -599,7 +611,7 @@ c.... Fatorizatpo da matriz e redutpo do vetor independente:
             k = jr + 2
             id = jdiag(is - 1)
 
-c....        Reduz as equat)es, exceto os termos da diagonal:
+c....        Reduz as equacoes, exceto os termos da diagonal:
             do 200 i = is, ie
                 ir = id
                 id = jdiag(i)
@@ -662,6 +674,7 @@ c     ****************************************************************
       end
 
 c     ****************************************************************
+c     Funcao produto escalar de dois vetores
 c     ****************************************************************
       real*8 function dot(a,b,n)
         integer n
@@ -675,6 +688,7 @@ c     ****************************************************************
       end
 
 c     ****************************************************************
+c     Subrotina para verificar a disponibilidade de memoria
 c     ****************************************************************
       subroutine mem(npos)
         common /size/ max
@@ -687,6 +701,7 @@ c     ****************************************************************
       end
 
 c     ****************************************************************
+c     Subrotina para zerar um vetor de real de i2-i1 elementos
 c     ****************************************************************
       subroutine mzero(m,i1,i2)
         integer i1,i2,m(*)
@@ -697,6 +712,7 @@ c     ****************************************************************
       end
 
 c     ****************************************************************
+c     Subrotina para zerar um vetor de real de i2-i1 elementos
 c     ****************************************************************
       subroutine  azero(a,i1,i2)
         integer i1,i2
@@ -708,6 +724,7 @@ c     ****************************************************************
       end
 
 c     ****************************************************************
+c     Subrotina para escrever os resultados
 c     ****************************************************************
       subroutine wdata(ix,id,x,f,u,nnode,numel,ndm,nen,ndf,nout)
         integer nnode,numel,ndm,nen,ndf,ix(nen+1,*),id(ndf,*)

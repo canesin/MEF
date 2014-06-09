@@ -4,7 +4,7 @@ c     programa para a a disciplina de MEF da COPPE eng. civil
 c     Programa original pelo prof. Fernando Ribeiro
 c     www.coc.ufrj.br/~fernando/downloads/program.zip
 c
-c       F·bio CÈsar Canesin <fabio.canesin@gmail.com> 28/05/2014
+c       Fabio Cesar Canesin <fabio.canesin@gmail.com> 28/05/2014
 c     *****************************************************************
       program mef
 
@@ -12,7 +12,7 @@ c     npos -> parametro que controla maximo de memoria
 c     default npos = 1073741824 bytes -> 1GB reservado para mef.f
         parameter (npos = 1073741824)
 
-c     Torna o array m (de memÛria) uma "vari·vel global"
+c     Torna o array m (de memoria) uma "variavel global"
         common m(npos)
         common /size/ max
 
@@ -23,8 +23,8 @@ c     servira como ponteiro de numeros de ponto flutuante no programa
 c     Alinha as ponteiros de a e m, fazendo com que eles coincidam
         equivalence (m(1), a(1))
 
-c     Popula a vari·vel max, que tem a posiÁ„o m·xima que pode ocupar
-c     uma vari·vel, no caso considerando que s„o vari·veis de 2 bytes ?
+c     Popula a variavel max, que tem a posicao maxima que pode ocupar
+c     uma variavel, no caso considerando que sao variaveis de 2 bytes ?
         max =  npos/2
 
 c     Executa a subrotina de controle
@@ -36,7 +36,7 @@ c     Interrompe a execusao do programa e finaliza mef
 
 c     *****************************************************************
 c     CONTR -> subrotina de controle do programa que gerencia todo o
-c     fluxo de execuÁ„o do programa
+c     fluxo de execucao do programa
 c     *****************************************************************
       subroutine contr(m,a)
         common /size/ max
@@ -45,10 +45,10 @@ c     *****************************************************************
         character*80 fname
 
 c     Abertura de arquivos:
-c       nin e nout s„o identificadores dos arquivos, quando utilizamos
-c       "open(NUM, fname)" NUM deve ser um numero ˙nico para todos os
+c       nin e nout sao identificadores dos arquivos, quando utilizamos
+c       "open(NUM, fname)" NUM deve ser um numero unico para todos os
 c       arquivos abertos no programa e fname um array de characteres
-c       que contÈm o fname = "path+nome_do_arquivo"
+c       que contem o fname = "path+nome_do_arquivo"
         nin  = 1
         nout = 2
         print*, 'Arquivo de dados:'
@@ -58,65 +58,95 @@ c       que contÈm o fname = "path+nome_do_arquivo"
         read(*, '(a)') fname
         open(nout, file=fname)
 
-c      Leitura das vari·veis principais:
-c       nnode -> n˙mero de nÛs
-c       numel -> n˙mero de elementos
-c       numat -> n˙mero de tipos de materiais
-c       nen   -> n˙mero m·ximo de nÛs por elemento
-c       ndf   -> n˙mero de graus de liberdade por nÛ
-c       ndm   -> dimens„o do problema
+c     Leitura das variaveis principais:
+c       O programa le em ordem a primeira linha como:
+c       nnode -> numero de nos
+c       numel -> numero de elementos
+c       numat -> numero de tipos de materiais
+c       nen   -> numero maximo de nos por elemento
+c       ndf   -> numero de graus de liberdade por no
+c       ndm   -> dimensao do problema
         read(nin,*) nnode, numel, numat, nen, ndf, ndm
 
-c     Esquema de alocaÁ„o de memÛria:
+c     Esquema de alocacao de memoria:
 c         1       i1       i2       i3       i4     i5       i6
 c     ---------------------------------------------------------
 c     |   e   |   ie   |   ix   |   id   |   x   |   f   |
 c     ---------------------------------------------------------
-c     Essa È a representaÁ„o da disposiÁ„o no array m das vari·veis
-c     onde cada i È um ponteiro para a posiÁ„o que comeÁa cada array,
-c     esses s„o na ordem:
-c       e: a(1) -> constantes fisicas - m·x 10 por tipo de material
+c     Essa e a representacao da disposicao no array m das variaveis
+c     onde cada i e um ponteiro para a posicao que comeca cada array,
+c     esses sao na ordem:
+c       e: a(1) -> constantes fisicas - max 10 por tipo de material
         nen1 = nen+1
 c       ie: m(i1) -> Tipo de elemento
         i1 = ( 1 + numat*10 - 1)*2 + 1
 c       ix: m(i2) -> conectividade + material do elemento
         i2 =  i1 + numat
-c       id: m(i3) -> restriÁıes nodais, 0 = livre ; 1 = restringido
+c       id: m(i3) -> restricoes nodais, 0 = livre ; 1 = restringido
         i3 =  i2 + numel*nen1
 c       x: a(i4) -> coordenadas nodais
         i4 = (i3 + nnode*ndf)/2 + 1
-c       f: a(i5) -> deslocamento presc. se ID(j,i) = 0 ou forÁa nodal
+c       f: a(i5) -> deslocamento presc. se ID(j,i) = 0 ou forca nodal
         i5 =  i4 + nnode*ndm
-c       a(i6) -> matrix de c·lculo, numero de nÛs x graus de liberdade
+c       a(i6) -> vetor incognitas, numero de nos x graus de liberdade
         i6 =  i5 + nnode*ndf
 
-c     Executa a subrotina mem respons·vel por
+c     Executa a subrotina mem responsavel por verificar disponibilidade
+c     de memoria, sempre chamada antes de alguma operacao que vai alocar
+c     mais posicoes em m
+
         call mem(i6)
 
-c      Executa a subrotina de leitura dos dados:
+c     Executa a subrotina de leitura dos dados:
+c       rdata(e: a(1) -> ponteiro de real para memoria/constantes fisicas,
+c             ie: m(i1) -> Tipo de elemento,
+c             ix: m(i2) -> conectividade + material do elemento,
+c             id: m(i3) -> restricoes nodais,
+c             x: a(i4) -> coordenadas nodais,
+c             f: a(i5) -> deslocamento prescitos,
+c             nnode: numero de nos,
+c             numel: numero de elementos,
+c             numat: numero de tipos de materiais,
+c             nen:   numero maximo de nos por elemento,
+c             ndm:   numero de dimensoes do problema,
+c             ndf:   numero de graus de liberdade por no,
+c             nin:   identificador do arquivo de entrada de dados)
         call rdata(a, m(i1), m(i2), m(i3), a(i4), a(i5), nnode, numel,
      &               numat, nen, ndm, ndf, nin)
 
-c      Executa a subrotina que realiza a numeraÁ„o das equacıes
+c     Executa a subrotina que realiza a numeracao das equacoes:
+c       rdata(id: m(i3) -> restricoes nodais,
+c             nnode: numero de nos,
+c             ndf:   numero de graus de liberdade por no,
+c             neq:   numero de equacoes)
         call numeq(m(i3), nnode, ndf, neq)
 
-c     Alocatpo de mem=ria:
-c
-c     i4    i5    i6    i7       i8
-c     ------------------------------
-c      |  x  |  f  |  u  | jdiag  |
-c     ------------------------------
-
+c     Alocacao de memoria:
+c        i4    i5    i6      i7      i8
+c      -----------------------------
+c      |  x  |  f  |  u  |  jdiag  |
+c      -----------------------------
+c       jdiag: m(i7) -> vetor de posicoes dos elementos diagonais da
+c                       matriz de rigidez no format skyline
         i7 = (i6 + neq - 1)*2 + 1
         i8 = (i7 + neq)/2 + 1
         call mem(i8)
 
-c      Perfil (skyline) da matriz de rigidez:
+c     Gerar perfil skyline da matriz de rigidez:
+c       profil(m: ponteiro de inteiros para a memoria,
+c              ix: m(i2) -> conectividade + material do elemento,
+c              id: m(i3) -> restricoes nodais,
+c              jdiag: m(i7) -> vetor de posicoes dos elementos diagonais da
+c                              matriz de rigidez no format skyline
+c              numel: numero de elementos,
+c              nen:   numero maximo de nos por elemento,
+c              ndf:   numero de graus de liberdade por no,
+c              neq:   numero de equacoes,
+c              ncs:   ???)
         call profil(m(i2),m(i3),m(i7),numel,nen,ndf,neq,ncs)
 
-c      Alocatpo de mem=ria:
-c
-c         i7     i8   i9     i10    i11    i12   i13   i14
+c     Alocacao de memoria:
+c         i7    i8    i9    i10     i11   i12   i13   i14
 c     -----------------------------------------------
 c     | jdiag | am |  xl  |  ul  |  fl  | sl  | ld  |
 c     -----------------------------------------------
@@ -129,7 +159,7 @@ c     -----------------------------------------------
         i14 = (i13 + nst)/2 + 1
         call mem(i14)
 
-c     Fortas nodais equivalentes:
+c     Calculo das forcas nodais equivalentes:
         call pload(m(i3),a(i5),a(i6),nnode,ndf)
 
 c     Matriz de rigidez e vetor de fortas corrigido:
@@ -141,19 +171,16 @@ c     afl = .true.  corrige o vetor de fortas
 c     bfl = .true.  monta a matriz de rigidez global
 c     isw = c=digo de instrutpo para a rotina de elemento
 c
-c     Resolutpo do sistema de equat)es:
+c     Resolucao do sistema de equacoes:
         call actcol(a(i8),a(i6),m(i7),neq,.true.,.true.)
 c
-c    afac = .true.  fatoriza a matriz
-c    back = .true.  retrosubstitui
+c     afac = .true.  fatoriza a matriz
+c     back = .true.  retrosubstitui
 c
-c
-c    Derivadas:
-c
+c     Derivadas:
 c     call pform(.............)
 c
-c    Impresspo dos resultados:
-c
+c     Impressao dos resultados:
         call wdata(m(i2),m(i3),a(i4),a(i5),a(i6),nnode,numel,ndm,nen,
      &           ndf,nout)
 c
@@ -161,12 +188,14 @@ c
       end
 
 c     *****************************************************************
+c		rdata -> subrotina para leitura de dados
 c     *****************************************************************
       subroutine rdata(e,ie,ix,id,x,f,nnode,numel,numat,nen,ndm,ndf,nin)
         integer nnode, numel, numat, ndm, nen, ndf, ie(*)
         integer ix(nen+1, *), id(ndf, *), iaux(6)
         real*8 e(10, *), x(ndm, *), f(ndf, *), aux(6), dum(1)
 
+c       Loop de 1 a numat (numero de materiais, 1 linha do .dat)
         do 100 i = 1, numat
             read(nin,*) ma,iel
             call elmlib(e(1,ma),dum,dum,dum,dum,1,iel,1,1,1,nin)
@@ -460,7 +489,7 @@ c     *****************************************************************
 
         goto(100,200) isw
 
-c    leitura das constantes ffsicas:
+c    leitura das constantes fisicas:
  100    continue
         read(nin,*) e(1),e(2),e(3)
       return
@@ -529,7 +558,7 @@ c    produto  p  =  s u :
 
 c     ****************************************************************
 c       Programa para resolucao de sistemas de equacoes algebricas
-c       lineares por eliminacao de gauss com decomposicao LtDL, vﬂlido
+c       lineares por eliminacao de gauss com decomposicao LtDL, valido
 c       somente para matrizes simetricas. Armazenamento skyline.
 c
 c       - Parametros de entrada :
@@ -651,7 +680,7 @@ c     ****************************************************************
         common /size/ max
         integer npos
         if ( (npos-1) .gt. max ) then
-            print*, ' Mem=ria insuficiente !'
+            print*, ' Memoria insuficiente !'
         stop
         endif
       return

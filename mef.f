@@ -199,17 +199,17 @@ c       Loop de 1 a numat (numero de materiais, 1 linha do .dat)
 c           Segunda linha .dat: ma -> material, iel -> tipo de elemento
             read(nin,*) ma,iel
 c           Biblioteca de elem. para ler propriedades materiais:
-c              elmlib(e: constantes fisicas,
-c                     xl:
-c                     ul:,
-c                     fl:,
+c              elmlib(e:  constantes fisicas,
+c                     xl: coordenadas locais ??,
+c                     ul: vetor incognitas local ??,
+c                     fl: vetor forcas local ??,
 c                     sl:,
-c                     nel:,
-c                     iel:,
-c                     ndm:,
-c                     nst:,
-c                     isw:,
-c                     nin:)
+c                     nel: numero do elemento ??,
+c                     iel: tipo do elemento,
+c                     ndm: numero de dimensoes,
+c                     nst: ,
+c                     isw: se 1 ler propriedades, se 2 calculo de Kij,
+c                     nin: id arquivo de entrada)
             call elmlib(e(1,ma),dum,dum,dum,dum,1,iel,1,1,1,nin)
             ie(ma) = iel
  100    continue
@@ -397,14 +397,16 @@ c     *****************************************************************
         integer nel,iel,ndm,nst,isw
         real*8 e(*),xl(*),ul(*),fl(*),sl(*)
 
-        goto (100,200) iel
-        print*, ' TIPO DE ELEMENTO INEXISTENTE, ',iel,'ELEMENTO: ',nel
+        goto (100,200,300,400) iel
+        print*, ' TIPO DE ELEMENTO INEXISTENTE: ',iel,'ELEMENTO: ',nel
         stop
  100    call elmt01(e,xl,ul,fl,sl,nel,ndm,nst,isw,nin)
       return
  200    call elmt02(e,xl,ul,fl,sl,nel,ndm,nst,isw,nin)
       return
-c  300    call elmt01(e,xl,ul,fl,sl,nel,ndm,nst,isw,nin)
+ 300    call elmq01(e,xl,ul,fl,sl,nel,ndm,nst,isw,nin)
+      return
+ 400    call elmq02(e,xl,ul,fl,sl,nel,ndm,nst,isw,nin)
       return
       end
 
@@ -568,6 +570,87 @@ c    produto  p  =  s u :
       stop
       end
 
+c     *****************************************************************
+c     Estado plano de deformacao - elemento quadrilatero bilinear
+c     *****************************************************************
+      subroutine elmq01(e,x,u,p,s,nel,ndm,nst,isw,nin)
+        integer nel,ndm,nst,isw
+        real*8  e(*),x(ndm,*),u(nst),p(nst),s(nst,nst)
+        real*8  det,xj11,xj12,xj21,xj22,hx(3),hy(3)
+        real*8  xji11,xji12,xji21,xji22,d11,d12,d21,d22,d33
+        real*8  my,nu,a,b,c
+
+        goto(100,200) isw
+
+c    leitura das constantes ffsicas:
+ 100    continue
+        read(nin,*) e(1),e(2)
+      return
+
+c    matriz de rigidez:
+ 200    continue
+
+c     Matriz Jacobiana:
+        xj11 = x(1,1)-x(1,3)
+        xj12 = x(2,1)-x(2,3)
+        xj21 = x(1,2)-x(1,3)
+        xj22 = x(2,2)-x(2,3)
+        det  = xj11*xj22-xj12*xj21
+        if (det .le. 0.d0) goto 1000
+c
+c    Inversa da matriz Jacobiana:
+c
+        xji11 =  xj22/det
+        xji12 = -xj12/det
+        xji21 = -xj21/det
+        xji22 =  xj11/det
+c
+c     Derivadas das funcoes de interpolacao:
+c
+        hx(1) =  xji11
+        hx(2) =  xji12
+        hx(3) = -xji11-xji12
+        hy(1) =  xji21
+        hy(2) =  xji22
+        hy(3) = -xji21-xji22
+c
+c     Matriz constitutiva:
+c       Considerando um caso Isotropico
+        my = e(1)
+        nu = e(2)
+        a = 1.d0+nu
+        b = a*(1.d0-2.d0*nu)
+        c = my*(1.d0-nu)/b
+        d11 = c
+        d12 = my*nu/b
+        d21 = d12
+        d22 = c
+        d33 = my/(2.d0*a)
+c
+c     Matriz de rigidez:
+c
+        wt = 0.5d0*det
+        do 220 j = 1, 3
+            k = (j-1)*2+1
+            do 210 i = 1, 3
+                l = (i-1)*2+1
+                s(l,k)   = ( hx(i)*d11*hx(j) + hy(i)*d33*hy(j) ) * wt
+                s(l,k+1) = ( hx(i)*d12*hy(j) + hy(i)*d33*hx(j) ) * wt
+                s(l+1,k) = ( hy(i)*d21*hx(j) + hx(i)*d33*hy(j) ) * wt
+                s(l+1,k+1) = ( hy(i)*d22*hy(j) + hx(i)*d33*hx(j) ) * wt
+
+ 210        continue
+ 220    continue
+
+c    produto  p  =  s u :
+        call lku(s,u,p,nst)
+      return
+1000    continue
+        print*, '*** Subrotina ELMT01: determinante nulo ou negativo
+     & do elemento ',nel
+      stop
+      end
+     
 c     ****************************************************************
 c       Programa para resolucao de sistemas de equacoes algebricas
 c       lineares por eliminacao de gauss com decomposicao LtDL, valido

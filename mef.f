@@ -609,8 +609,8 @@ C      Zera os coeficientes da matriz:
        enddo
 
 C      Loop para integracao de Gauus em xi e eta
-       do i = 1, 2
-        do j = 1, 2
+       do 201 i = 1, 2
+        do 202 j = 1, 2
            xi = ((-1)**(i-1))*0.577350269189626
            eta = ((-1)**j)*xi
 
@@ -627,14 +627,14 @@ C     Derivadas de Ni em relacao a eta :
 
 C     Matriz Jacobiana
 C       Produto escalar linha coluna, dot(N,x)
-           do k = 1 , 2
+           do 203 k = 1 , 2
                xj(1,k) = 0.d0
                xj(2,k) = 0.d0
-               do l = 1 , 4
+               do 204 l = 1 , 4
                    xj(1,k) = xj(1,k) + Nx(l) * x(k,l)
                    xj(2,k) = xj(2,k) + Ne(l) * x(k,l)
-               enddo
-           enddo
+ 204           continue
+ 203       continue
 c
 C     Determinante da matriz Jacobiana:
            det = xj(1,1)*xj(2,2)-xj(2,1)*xj(1,2)
@@ -647,19 +647,19 @@ c
 	   xji(2,2) =  xj(1,1) / det
 c
 C     Derivadas das funcoes de interpolacao:
-           do k = 1, 4
+           do 205 k = 1, 4
               hx(k) = xji(1,1)*Nx(k) + xji(1,2)*Ne(k)
               hy(k) = xji(2,1)*Nx(k) + xji(2,2)*Ne(k)
-           enddo
+ 205       continue
 C          Se EPT multiplica o determinante do Jacobiano por e(3) thic
            if (ept .eq. 1) then
               det = det * e(3)
            else
                continue
            endif
-           do  m = 1, 4
+           do 206 m = 1, 4
               k = (m-1)*2+1
-              do n = 1, 4
+              do 207 n = 1, 4
                 l = (n-1)*2+1
                 s(l, k)    = s(l, k)    +(hx(n)*d11*hx(m) +
      &                                    hy(n)*d33*hy(m))*det
@@ -669,10 +669,10 @@ C          Se EPT multiplica o determinante do Jacobiano por e(3) thic
      &                                    hx(n)*d33*hy(m))*det
                 s(l+1, k+1)= s(l+1, k+1)+(hy(n)*d22*hy(m) +
      &                                    hx(n)*d33*hx(m))*det
-              enddo
-           enddo
-        enddo
-       enddo
+ 207          continue
+ 206       continue
+ 202    continue
+ 201   continue
 
 C      Produto  p = S u :
        call lku(s,u,p,nst)

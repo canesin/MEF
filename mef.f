@@ -666,10 +666,14 @@ C          Se EPT multiplica o determinante do Jacobiano por e(3) thic
               k = (m-1)*2+1
               do n = 1, 4
                 l = (n-1)*2+1
-          s(l,k)= s(l,k) +( hx(n)*d11*hx(m) + hy(n)*d33*hy(m) ) * det
-          s(l,k+1)= s(l,k+1)+( hx(n)*d12*hy(m) + hy(n)*d33*hx(m) )*det
-          s(l+1,k)=s(l+1,k)+ ( hy(n)*d12*hx(m) + hx(n)*d33*hy(m) )*det
-          s(l+1,k+1)=s(l+1,k+1)+( hy(n)*d22*hy(m) + hx(n)*d33*hx(m))*det
+                s(l, k)    = s(l, k)    +(hx(n)*d11*hx(m) +
+     &                                    hy(n)*d33*hy(m))*det
+                s(l, k+1)  = s(l, k+1)  +(hx(n)*d12*hy(m) +
+     &                                    hy(n)*d33*hx(m))*det
+                s(l+1, k)  = s(l+1, k)  +(hy(n)*d12*hx(m) +
+     &                                    hx(n)*d33*hy(m))*det
+                s(l+1, k+1)= s(l+1, k+1)+(hy(n)*d22*hy(m) +
+     &                                    hx(n)*d33*hx(m))*det
               enddo
            enddo
         enddo

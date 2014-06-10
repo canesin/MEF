@@ -3,6 +3,8 @@
 #################
 
 *.pydevproject
+*.~f
+*.out
 .cproject
 .project
 .metadata

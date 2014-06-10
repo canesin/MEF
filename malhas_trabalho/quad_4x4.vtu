@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<VTKFile type="UnstructuredGrid" version="0.1" byte_order="LittleEndian" compressor="vtkZLibDataCompressor">
+  <UnstructuredGrid>
+    <Piece NumberOfPoints="25"                   NumberOfCells="16"                  >
+      <PointData>
+        <DataArray type="Float64" Name="Deslocamento" NumberOfComponents="3" format="appended" RangeMin="0"                    RangeMax="3.3603295225"         offset="0"                   />
+      </PointData>
+      <CellData>
+      </CellData>
+      <Points>
+        <DataArray type="Float32" Name="Points" NumberOfComponents="3" format="appended" RangeMin="0"                    RangeMax="1.4142135624"         offset="508"                 />
+      </Points>
+      <Cells>
+        <DataArray type="Int64" Name="connectivity" format="appended" RangeMin=""                     RangeMax=""                     offset="632"                 />
+        <DataArray type="Int64" Name="offsets" format="appended" RangeMin=""                     RangeMax=""                     offset="788"                 />
+        <DataArray type="UInt8" Name="types" format="appended" RangeMin=""                     RangeMax=""                     offset="880"                 />
+      </Cells>
+    </Piece>
+  </UnstructuredGrid>
+  <AppendedData encoding="base64">
+   _AQAAAACAAABYAgAAawEAAA==eJxjYMAONsfxPHXZ/cTe42GVyDr3j/th4msXr+Jc9O6dvSHHGpmolL9wcd4HuhMW/Phoz62iUddjyXIAJm655UTZvvmf7Xd58jBps3MeYCAAWBdPsmL0PWIvKBn20e3Zc7j5085/stlhfdPe9caHL16RP+Hi3qsVC/uXPrRfNvuIwoYiJrj5TTJTDC5/e2Kf/6H1ZIgjO0F7O7ifvmScUW5vF1N0R1P2Cdx8M7vJfz+brLBvZDnab1j+DS6ucvG0xrToXfYg4w9qMMLNt/G7ODHm32FI+DxhJWhv7cQL04o1D+23vapofpj3Mdz8HQ5Nj47PuLhf+fbPuqw9X+Hih/S/fl6mdHX/qo+XfJMmMMDNd220m6jueXV/V9+TT/JBhO11euOz8LPUw/1ATdd99j2Dmy+cePiydurL/daMvi28/gj/Hs+QDfUVeLP/TgZDfmMLwl63eMdZGzPe7D8T632C3RZhLwDXvqJxAQAAAACAAAAsAQAASgAAAA==eJxtz2EOABAMg9GebHo0RxeT2SexPxq8KGnPHDprdNbobOSJXGdlDWtYwxpWsIIVrGAFm6Y6BzoHOkfbewfz7H3+dN/NWWGQFk8=AQAAAACAAAAAAgAAYQAAAA==eJxdjjsSgCAUxPwCCijg9/4ntXBfk20ykybbdf9m0Yk9aN6LA2g+iCNofhEndFcxoufgE3oePqMX4Df8sO4uFvQifEUvwTf0MvyBH9Y9xQu9An+jV+Ef9Br8ix8fOx4DAQ==AQAAAACAAACAAAAAMwAAAA==eJxjYYAADijNA6UFoLQIlJaA0jJQWgFKq0BpDSitA6UNoLQJlLaA0jZQ2gFKAwBmgAIhAQAAAACAAAAQAAAACwAAAA==eJzj5EQFAATYAJE=
+  </AppendedData>
+</VTKFile>

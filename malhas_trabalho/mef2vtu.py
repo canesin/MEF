@@ -29,7 +29,7 @@ class Frozendict(dict):
     pop = _immutable
     popitem = _immutable
 
-#Dictionary of VTK to VISAGE element number correpondence
+#Dicionario de correspondencia tipo de elementos para MEF e VTK
 MJC2VTK = {
 # MJC : VTK
 	#Numero no programa -- ( Numero no VTK, Numero de nós no elemento, 1-linear 2-quadratico)
@@ -103,33 +103,22 @@ def read_scalar_results(grid, data):
     """ Read results from scalr fields
     """
     nnodes = grid.GetNumberOfPoints()
-    #ncells = grid.GetNumberOfCells()
-    #idx -> numero da linha, line -> linha no arquivo data
-    #Na mao grande
-    nodal_scalar_fields = "DX DY DZ" # Logo names, sera 'id DX DY DZ'
+    # Vamos ler os campos 'id DX DY DZ'
+    nodal_scalar_fields = "DX DY DZ"
 
     for idx, line in enumerate(data):
-	    # Usando regular expression procura por uma palavra que inicia por 'nvec'
-        #mnodal_scalar_fields = re.match(r"^nvec.*", line)
-        mnodal_scalar_data = re.match(r"^nvec.*", line)
-
-        # Comentado, caso tenhamos um local com o nome dos resultados
-        #if mnodal_scalar_fields:
-        #    nodal_scalar_fields = (int(data[idx+1].strip()), data[idx+2])
-
-		# Caso estejamos no linha que tem a palavra 'nvec'
+        # Caso estejamos no linha que tem a palavra 'nvec'
         if 'nvec' in line.split():
             # Descrever o tipo de dado que existe nesse resultado
             dttype = {'names': 'id '+nodal_scalar_fields, # Concatenacao de strings
                           'type': tuple([int]+3*[float])} # Definindo estrutura de dados
-                # Agora carregamos os dados, apartir de idx+1 até o final dos numero de nós
-            nodal_scalar_data = loadarray(dttype, [dttype['names']]+data[idx+1:idx+1+nnodes])
-            # Caso tenhamos mais de um campo com nomes
-            #nodal_scalar_fields = re.findall(r"'(\w+\s*\w*)'", nodal_scalar_fields[1])
-            for field in nodal_scalar_fields.split():
-                vtkfield = npvtk.numpy_to_vtk(np.ascontiguousarray(nodal_scalar_data[field]), 1)
-                vtkfield.SetName(field)
-                grid.GetPointData().AddArray(vtkfield)
+            # Agora carregamos os dados, apartir de idx+1 até o final dos numero de nós
+            desloc = loadarray(dttype, [dttype['names']]+data[idx+1:idx+1+nnodes])
+            #for field in nodal_scalar_fields.split():
+            vecdata = np.array([desloc.DX, desloc.DY, desloc.DZ])
+            vtkfield = npvtk.numpy_to_vtk(np.ascontiguousarray(vecdata.T), 1)
+            vtkfield.SetName("Deslocamento")
+            grid.GetPointData().AddArray(vtkfield)
     pass
 
 def readfile(meshpath):
@@ -159,9 +148,8 @@ def readfile(meshpath):
             npts = int(linha.split()[1]) #Numero de coordenadas (nos/pontos)
             nodesidx = idx + 1 #Posicao em data que comecam os nos(pontos)
         if 'elem' in linha.split():
-            nelem = int(linha.split()[1]) #Numero de elementos            
+            nelem = int(linha.split()[1]) #Numero de elementos
             etype = int(data[idx+1].split()[1]) #Nome do elemento no MJC2VTK
-            print etype
             elemsidx = idx + 1 #Posicao em data que comeca a conectividade
         if 'nvec' in linha.split():
             residx = idx+1 #Posicao em data que comeca os resultados
@@ -233,19 +221,13 @@ if __name__ == '__main__':
     """ Exemplo de uso
     """
 
-    GRID = Grid('tria_64x64.out')
-    GRID.SaveVTK('tria_64x64')
-    GRID = Grid('quad_64x64.out')
-    GRID.SaveVTK('quad_64x64')
+    casos = [(5, 5), (9, 9), (17, 17), (33, 33), (65, 65)]
+    tipos_malha = [True, False] # Quadrangular e triangular
 
-    
-#    casos = [(5, 5), (9, 9), (17, 17), (33, 33), (65, 65)]
-#    tipos_malha = [True, False] # Quadrangular e triangular
-#    
-#    # quadrado_unitario(11, 11, 'testando', carga=-1.0, quad=tipo)
-#    for caso in casos:
-#        ni, nj = caso
-#        for tipo in tipos_malha:
-#            nome = '{}_{}x{}'.format('quad' if tipo else 'tria', ni-1, nj-1)
-#            GRID = Grid(nome+'.out')
-#            GRID.SaveVTK(nome)
+    # quadrado_unitario(11, 11, 'testando', carga=-1.0, quad=tipo)
+    for caso in casos:
+        ni, nj = caso
+        for tipo in tipos_malha:
+            nome = '{}_{}x{}'.format('quad' if tipo else 'tria', ni-1, nj-1)
+            GRID = Grid(nome+'.out')
+            GRID.SaveVTK(nome)

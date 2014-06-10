@@ -592,14 +592,9 @@ C      Matriz constitutiva:
        nu = e(2)
        lam = nu*my/((1.d0+nu)*(1-2.d0*nu))
        mu = my/(2d0*(1.d0+nu))
-       if (ept .eq. 1) then
-          lamb = 2.d0*(lam*mu)/(lam+2.d0*mu)
-          lam = lmab
-       else
-          continue
-       endif
+       if (ept .eq. 1) then lam = 2.d0*(lam*mu)/(lam+2.d0*mu)
 
-       d11 = lam + 2d0*mu
+       d11 = lam + 2.d0*mu
        d12 = lam
        d33 = mu
        d21 = d12

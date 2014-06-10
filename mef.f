@@ -563,10 +563,10 @@ C       Produto  p = S u :
       stop
       end
 
-      subroutine elmq01(e,x,u,p,s,nel,ndm,nst,isw,nin,ept)
 C     ***********************************************************
 C     Elemento quadrilatero bilinear, EPD e EPT
 C     ***********************************************************
+      subroutine elmq01(e,x,u,p,s,nel,ndm,nst,isw,nin,ept)
        integer nel,ndm,nst,isw,i,j,k,l,m,n,ept
        real*8  e(*),x(ndm,*),u(nst),p(nst),s(nst,nst),xj(ndm,2)
        real*8  det,hx(4),hy(4),xji(ndm,2),Nx(4),Ne(4)
@@ -629,6 +629,7 @@ C      Loop para integracao de Gauus em xi e eta
                 xi = -0.577350269189626
                 eta = -0.577350269189626
             endif
+
 C     Derivadas de Ni em relacao a xi :
             Nx(1)  =   (1.d0+eta) / 4.d0
             Nx(2)  = - (1.d0+eta) / 4.d0
@@ -666,6 +667,12 @@ C     Derivadas das funcoes de interpolacao:
                hx(k) = xji(1,1)*Nx(k) + xji(1,2)*Ne(k)
                hy(k) = xji(2,1)*Nx(k) + xji(2,2)*Ne(k)
             enddo
+C           Se EPT multiplica o determinante do Jacobiano por e(3) thic
+            if (ept .eq. 1) then
+               det = det * e(3)
+            else
+                continue
+            endif
             do  m = 1, 4
                k = (m-1)*2+1
                do n = 1, 4
@@ -678,9 +685,8 @@ C     Derivadas das funcoes de interpolacao:
             enddo
         enddo
        enddo
-c
-c	produto  p  =  s u :
-c
+
+C      Produto  p = S u :
        call lku(s,u,p,nst)
 	   return
 1000   continue
@@ -719,7 +725,7 @@ C     ****************************************************************
         dimension a(*), b(*), jdiag(*)
         logical afac, back
 
-c.... Fatorizacao da matriz e reducao do vetor independente:
+C       Fatorizacao da matriz e reducao do vetor independente:
         aengy = 0.0d0
         jr = 0
         do 600 j = 1,neq
@@ -732,7 +738,7 @@ c.... Fatorizacao da matriz e reducao do vetor independente:
             k = jr + 2
             id = jdiag(is - 1)
 
-c....        Reduz as equacoes, exceto os termos da diagonal:
+C           Reduz as equacoes, exceto os termos da diagonal:
             do 200 i = is, ie
                 ir = id
                 id = jdiag(i)
@@ -740,7 +746,7 @@ c....        Reduz as equacoes, exceto os termos da diagonal:
                 if(ih.gt.0) a(k) = a(k) - dot(a(k-ih),a(id-ih),ih)
  200        k = k + 1
 
-c....        Reduz os termos da diagonal:
+C           Reduz os termos da diagonal:
  300        if(.not.afac) goto 500
             ir = jr+1
             ie = jd - 1
@@ -753,18 +759,18 @@ c....        Reduz os termos da diagonal:
                 a(jd) = a(jd) - d*a(i)
  400        continue
 
-c....        Reduz o vetor independente:
+C             Reduz o vetor independente:
  500          if(back) b(j) = b(j) - dot(a(jr+1),b(is-1),jh-1)
  600        jr = jd
             if(.not.back) return
 
-c.... Divide pelos pivots da diagonal:
+C      Divide pelos pivots da diagonal:
             do 700 i = 1,neq
                 id = jdiag(i)
                 if(a(id).ne.0.0d0) b(i) = b(i)/a(id)
  700            aengy = aengy + b(i)*b(i)*a(id)
 
-c.... Retrosubstitui:
+C      Retrosubstitui:
             j = neq
             jd = jdiag(j)
  800    d = b(j)

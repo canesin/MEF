@@ -652,10 +652,10 @@ C       Produto escalar linha coluna, dot(N,x)
                 enddo
             enddo
 c
-C     Determinante da matriz Jacobiana:  
+C     Determinante da matriz Jacobiana:
             det = xj(1,1)*xj(2,2)-xj(2,1)*xj(1,2)
 c
-C     Inversa da matriz Jacobiana:  
+C     Inversa da matriz Jacobiana:
 c
             xji(1,1) =  xj(2,2) / det
             xji(1,2) = -xj(1,2) / det
@@ -694,7 +694,7 @@ C      Produto  p = S u :
      & elemento ',nel
        stop
 	   end
-     
+
 C     ****************************************************************
 C       Programa para resolucao de sistemas de equacoes algebricas
 C       lineares por eliminacao de gauss com decomposicao LtDL, valido
@@ -862,7 +862,8 @@ C     ****************************************************************
  100    continue
         write(nout,'(a,i10)') 'elem ', numel
         do 200 i = 1, numel
-            write(nout,'(10i10)') i,3,(ix(j,i),j=1,nen)
+C           Modificado para imprimir nen ao invez de 3 hardcoded
+            write(nout,'(10i10)') i,nen,(ix(j,i),j=1,nen)
  200    continue
         write(nout,'(a,i2)') 'nosc ',ndf
         do 300 i = 1, nnode

@@ -616,73 +616,62 @@ C      Zera os coeficientes da matriz:
 C      Loop para integracao de Gauus em xi e eta
        do i = 1, 2
         do j = 1, 2
-            if (i .eq. 1 .and. j .eq. 1) then
-                xi = 0.577350269189626
-                eta = -0.577350269189626
-            else if (i .eq. 1 .and. j .eq. 2) then
-                xi = 0.577350269189626
-                eta = 0.577350269189626
-            else if (i .eq. 2 .and. j .eq. 1) then
-                xi = -0.577350269189626
-                eta = 0.577350269189626
-            else if (i .eq. 2 .and. j .eq. 2) then
-                xi = -0.577350269189626
-                eta = -0.577350269189626
-            endif
+           xi = ((-1)**(i-1))*0.577350269189626
+           eta = ((-1)**j)*xi
 
 C     Derivadas de Ni em relacao a xi :
-            Nx(1)  =   (1.d0+eta) / 4.d0
-            Nx(2)  = - (1.d0+eta) / 4.d0
-            Nx(3)  = - (1.d0-eta) / 4.d0
-            Nx(4)  =   (1.d0-eta) / 4.d0
+           Nx(1)  =   (1.d0+eta) / 4.d0
+           Nx(2)  = - (1.d0+eta) / 4.d0
+           Nx(3)  = - (1.d0-eta) / 4.d0
+           Nx(4)  =   (1.d0-eta) / 4.d0
 C     Derivadas de Ni em relacao a eta :
-            Ne(1)  =  (1.d0+xi) / 4.d0
-            Ne(2)  =  (1.d0-xi) / 4.d0
-            Ne(3)  = -(1.d0-xi) / 4.d0
-            Ne(4)  = -(1.d0+xi) / 4.d0
+           Ne(1)  =  (1.d0+xi) / 4.d0
+           Ne(2)  =  (1.d0-xi) / 4.d0
+           Ne(3)  = -(1.d0-xi) / 4.d0
+           Ne(4)  = -(1.d0+xi) / 4.d0
 
 C     Matriz Jacobiana
 C       Produto escalar linha coluna, dot(N,x)
-            do k = 1 , 2
-                xj(1,k) = 0.d0
-                xj(2,k) = 0.d0
-                do l = 1 , 4
-                    xj(1,k) = xj(1,k) + Nx(l) * x(k,l)
-                    xj(2,k) = xj(2,k) + Ne(l) * x(k,l)
-                enddo
-            enddo
+           do k = 1 , 2
+               xj(1,k) = 0.d0
+               xj(2,k) = 0.d0
+               do l = 1 , 4
+                   xj(1,k) = xj(1,k) + Nx(l) * x(k,l)
+                   xj(2,k) = xj(2,k) + Ne(l) * x(k,l)
+               enddo
+           enddo
 c
 C     Determinante da matriz Jacobiana:
-            det = xj(1,1)*xj(2,2)-xj(2,1)*xj(1,2)
+           det = xj(1,1)*xj(2,2)-xj(2,1)*xj(1,2)
 c
 C     Inversa da matriz Jacobiana:
 c
-            xji(1,1) =  xj(2,2) / det
-            xji(1,2) = -xj(1,2) / det
-            xji(2,1) = -xj(2,1) / det
-		    xji(2,2) =  xj(1,1) / det
+           xji(1,1) =  xj(2,2) / det
+           xji(1,2) = -xj(1,2) / det
+           xji(2,1) = -xj(2,1) / det
+	   xji(2,2) =  xj(1,1) / det
 c
 C     Derivadas das funcoes de interpolacao:
-            do k = 1, 4
-               hx(k) = xji(1,1)*Nx(k) + xji(1,2)*Ne(k)
-               hy(k) = xji(2,1)*Nx(k) + xji(2,2)*Ne(k)
-            enddo
-C           Se EPT multiplica o determinante do Jacobiano por e(3) thic
-            if (ept .eq. 1) then
-               det = det * e(3)
-            else
-                continue
-            endif
-            do  m = 1, 4
-               k = (m-1)*2+1
-               do n = 1, 4
-                 l = (n-1)*2+1
+           do k = 1, 4
+              hx(k) = xji(1,1)*Nx(k) + xji(1,2)*Ne(k)
+              hy(k) = xji(2,1)*Nx(k) + xji(2,2)*Ne(k)
+           enddo
+C          Se EPT multiplica o determinante do Jacobiano por e(3) thic
+           if (ept .eq. 1) then
+              det = det * e(3)
+           else
+               continue
+           endif
+           do  m = 1, 4
+              k = (m-1)*2+1
+              do n = 1, 4
+                l = (n-1)*2+1
           s(l,k)= s(l,k) +( hx(n)*d11*hx(m) + hy(n)*d33*hy(m) ) * det
           s(l,k+1)= s(l,k+1)+( hx(n)*d12*hy(m) + hy(n)*d33*hx(m) )*det
           s(l+1,k)=s(l+1,k)+ ( hy(n)*d12*hx(m) + hx(n)*d33*hy(m) )*det
           s(l+1,k+1)=s(l+1,k+1)+( hy(n)*d22*hy(m) + hx(n)*d33*hx(m))*det
-                enddo
-            enddo
+              enddo
+           enddo
         enddo
        enddo
 

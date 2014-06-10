@@ -39,8 +39,10 @@ C     fluxo de execucao do programa
 C     *****************************************************************
       subroutine contr(m,a)
         common /size/ max
+        common /engys/ aengy
+        
         integer m(*)
-        real*8  a(1)
+        real*8  a(1), aengy
         character*80 fname
 
 C     Abertura de arquivos:
@@ -181,7 +183,9 @@ c
 C     Impressao dos resultados:
         call wdata(m(i2),m(i3),a(i4),a(i5),a(i6),nnode,numel,ndm,nen,
      &           ndf,nout)
-c
+        print*, 'Norma de energia ao quadrado: ', aengy
+        print*, 'Pressione uma tecla para fechar'
+        read(*, *)
       return
       end
 
@@ -681,7 +685,7 @@ C      Produto  p = S u :
        print*, '*** Subrotina elmq01: determinante nulo ou negativo do
      & elemento ',nel
        stop
-	   end
+       end
 
 C     ****************************************************************
 C       Programa para resolucao de sistemas de equacoes algebricas

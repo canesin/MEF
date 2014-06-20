@@ -173,7 +173,9 @@ C     isw = c=digo de instrutpo para a rotina de elemento
 c
 C     Resolucao do sistema de equacoes:
         call actcol(a(i8),a(i6),m(i7),neq,.true.,.true.)
-c
+C     Soluciona o sistema utilizando o gradiente conjugado
+c        call pcg(a(i8),a(i6),m(i7),neq)
+
 C     afac = .true.  fatoriza a matriz
 C     back = .true.  retrosubstitui
 c
@@ -409,9 +411,9 @@ C     *****************************************************************
       return
  200    call elmt02(e,xl,ul,fl,sl,nel,ndm,nst,isw,nin)
       return
- 300    call elmq01(e,xl,ul,fl,sl,nel,ndm,nst,isw,nin,0)
+ 300    call elmq0304(e,xl,ul,fl,sl,nel,ndm,nst,isw,nin,0)
       return
- 400    call elmq01(e,xl,ul,fl,sl,nel,ndm,nst,isw,nin,1)
+ 400    call elmq0304(e,xl,ul,fl,sl,nel,ndm,nst,isw,nin,1)
       return
       end
 
@@ -570,7 +572,7 @@ C       Produto  p = S u :
 C     ***********************************************************
 C     Elemento quadrilatero bilinear, EPD e EPT
 C     ***********************************************************
-      subroutine elmq01(e,x,u,p,s,nel,ndm,nst,isw,nin,ept)
+      subroutine elmq0304(e,x,u,p,s,nel,ndm,nst,isw,nin,ept)
        integer nel,ndm,nst,isw,i,j,k,l,m,n,ept
        real*8  e(*),x(ndm,*),u(nst),p(nst),s(nst,nst),xj(ndm,2)
        real*8  det,hx(4),hy(4),xji(ndm,2),Nx(4),Ne(4)
@@ -592,10 +594,15 @@ C      se ept=1, e(3): espessura
 
   200  continue
 C      Matriz constitutiva:
+C         my = E -> modulo de elasticidade
+C         nu = nu -> coeficiente de poisson
+C         lam = lambda -> Primeiro parametro de Lame
+C         mu = mu -> Segundo parametro de Lame
        my = e(1)
        nu = e(2)
        lam = nu*my/((1.d0+nu)*(1-2.d0*nu))
        mu = my/(2d0*(1.d0+nu))
+C      Se EPT lambda = lambda_barra       
        if (ept .eq. 1) then lam = 2.d0*(lam*mu)/(lam+2.d0*mu)
 
        d11 = lam + 2.d0*mu
@@ -792,6 +799,178 @@ C     ****************************************************************
       return
       end
 
+C     *****************************************************************
+C     pcg - Subrotina do metodo do gradiente conjugado
+C     *****************************************************************
+      subroutine pcg(a, b, jdiag, neq)
+	integer k, j, imax, neq, jdiag(*)
+      real*8 a(*), b(*), nume, deno, aengy
+	real*8 tol, rnorm, tmp(neq), alfa, beta, r(neq)
+      real*8 vec(neq), z(neq), p(neq), x(neq), MI(neq)
+      real*8 z_new(neq), r_new(neq)
+      common/engys/ aengy
+      k = 0
+      imax = 100000000
+      tol = 1E-12
+
+C     Zera os vetores e calcula a inversa de M como precondicionador
+c     Pode ser substituida por uma linha de DATA!!! Somente exemplo
+	do j= 1,neq
+          x(j) = 0.0
+          MI(j) = 1/(a(jdiag(j)))
+          vec(j) = 0.0
+          z(j) = 0.0
+          z_new(j) = 0.0
+          tmp(j) = 0.0
+          r(j) = 0.0
+          r_new(j) = 0.0
+      enddo
+
+C     Calcula vec = [A]*[x0] matvec(jdiag, mat, vec, out, neq)
+      call matvec(jdiag, a, x, vec, neq)
+
+C     Calcula r0 = b - [A]*[x0]
+      do j= 1,neq
+          r(j) = b(j) - vec(j)
+      enddo
+
+C     Calcula z0 = [MI]*[r0]
+      call matvec_dia(MI, r, z, neq)
+
+C     Faz p0 = z0      
+      do j= 1,neq
+          p(j) = z(j)
+      enddo
+
+C     Calcula a norma L2 (euclidiana) de r
+      call nl2(r, rnorm, neq)
+
+C     Inicia o loop para encontrar as bases de Krylov
+	do while (k .lt. imax .and. rnorm .gt. tol)
+
+C         Calcula o matvec do denominador de alfak
+          call matvec(jdiag, a, p, tmp, neq)
+          call dot2(r, z, nume, neq)
+          call dot2(p, tmp, deno, neq)
+          alfa = nume/deno
+
+C         Calcula xk+1
+          do j= 1,neq
+              x(j) = x(j) + alfa*p(j)
+          enddo
+
+C         Calcula rk+1
+          call matvec(jdiag, a, p, tmp, neq)
+          do j= 1,neq
+              r_new(j) = r(j) - alfa*tmp(j)
+          enddo
+
+C         Verifica se atingimos a tolerancia desejada
+          call nl2(r_new, rnorm, neq)
+          if (rnorm .lt. tol) goto 1000
+
+C         Calcula zk+1
+          call matvec_dia(MI, r_new, z_new, neq)
+
+C         Calcula o parametro beta
+C             Poderiamos evitar um produto escalar aqui!
+          call dot2(r_new, z_new, nume, neq)
+          call dot2(r, z, deno, neq)
+          beta = nume/deno
+
+C         Atualiza pk = pk+1, r = r_new, z = z_new
+          do j= 1,neq
+               p(j) = z_new(j) + beta*p(j)
+               r(j) = r_new(j)
+               z(j) = z_new(j)
+          enddo
+          k = k+1
+      enddo
+1000  continue
+C     Devolve o resultado copiando xk+1 em b
+	do j= 1, neq
+	      b(j) = x(j)
+	enddo
+
+C	Calcula norma de energia
+      end
+
+C     ****************************************************************
+C     Subrotina calcula a norma L2 (euclidiana) de um vetor
+C     ****************************************************************
+      subroutine nl2(vec, norm, n)
+          integer n
+          real*8 vec(*)
+          real*8 norm
+          intrinsic ABS,SQRT
+
+          norm = 0.d0
+          if (n .eq. 1) then
+              norm = ABS(vec(1))
+          else
+              do 100 i = 1, n
+                  norm = norm + vec(i)**2
+ 100          continue
+          endif
+          norm = SQRT(norm)
+      end
+
+C     ****************************************************************
+C     Subrotina matriz vetor para matriz diagonal
+C     ****************************************************************
+      subroutine matvec_dia(a, y, out, neq)
+	  integer i, j, k, m, neq
+	  real*8 a(*), y(*), out(neq)
+        
+        do i=1,neq
+            out(i) = a(i)*y(i)
+        enddo
+      end
+            
+C     ****************************************************************
+C     Subrotina dot2 calcula o produto escalar de dois vetores
+C     ****************************************************************
+      subroutine dot2(a, b, out, n)
+          integer n
+          real*8 out, a(*), b(*)
+
+          out = 0.d0
+          do 100 i = 1, n
+              out = out + a(i)*b(i)
+ 100      continue
+      end
+      
+C     *****************************************************************
+C     MATVEC produto matriz vertor c/ armazenamento skyline
+C     *****************************************************************
+      subroutine matvec(jdiag, a, y, out, neq)
+	  implicit real*8 (a-h, o-z)
+	  integer i, j, k, m, neq
+	  real*8 y(neq), va(neq), out(neq)
+	  dimension a(*), jdiag(*)
+C   zerando o vetor auxiliar va
+      do i=1, neq
+	    va(i) = 0
+	  enddo
+C   produto do primeiro termo da diagonal principal
+      va(1)= a(1)*y(1)
+C   loop para produto matriz-vetor
+      do i=2, neq
+	    j= jdiag(i)
+C   produto da diagonal principal
+        va(i)= va(i) + a(j)*y(i)
+C   altura de cada coluna
+        k= jdiag(i) - jdiag(i-1) - 1
+C   loop para produto fora da diagonal
+        do m=1, k
+C   produto da parte superior da matriz
+          va(i-m)= va(i-m) + a(j-m)*y(i)
+C  	produto da parte inferior da matriz
+          va(i)= va(i) + a(j-m)*y(i-m)
+        enddo
+      enddo
+      out = va
+      end      
 C     ****************************************************************
 C     Funcao produto escalar de dois vetores
 C     ****************************************************************
